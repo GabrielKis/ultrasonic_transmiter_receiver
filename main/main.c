@@ -2,11 +2,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/timer.h"
-#include "esp_log.h"
+#include <driver/dac.h>
 
 #define TIMER_DIVIDER          16
 #define TIMER_SCALE            (TIMER_BASE_CLK / TIMER_DIVIDER)     // convert counter value to seconds
-#define TIMER_INTERVAL_SEC     (1)                                  // sample test interval for the first timer
+#define TIMER_INTERVAL_SEC     (20)                                  // sample test interval for the first timer
 #define ALARM_VAL_US           (TIMER_INTERVAL_SEC * TIMER_SCALE)
 #define WITH_RELOAD            1
 
@@ -23,7 +23,6 @@ static void IRAM_ATTR timer0_ISR(void *ptr)
 /* Inicializacao TIMER_0 - group_0 */
 static void config_timer(int timer_idx, bool auto_reload)
 {
-    esp_err_t ret;
     timer_config_t config = {
         .divider = TIMER_DIVIDER,
         .counter_dir = TIMER_COUNT_UP,
@@ -34,26 +33,30 @@ static void config_timer(int timer_idx, bool auto_reload)
     };
 
     // Inicia o timer (idx) do grupo 0 com as configs acima
-    ret = timer_init(TIMER_GROUP_0, timer_idx, &config);
-    ESP_ERROR_CHECK(ret);
+    timer_init(TIMER_GROUP_0, timer_idx, &config);
     // Seta o timer com 0x00000000 (ULL)
-    ret = timer_set_counter_value(TIMER_GROUP_0, timer_idx, 0x00000000ULL);
-    ESP_ERROR_CHECK(ret);
+    timer_set_counter_value(TIMER_GROUP_0, timer_idx, 0x00000000ULL);
     // Configura o alarme
-    ret = timer_set_alarm_value(TIMER_GROUP_0, timer_idx, ALARM_VAL_US);
-    ESP_ERROR_CHECK(ret);
+    timer_set_alarm_value(TIMER_GROUP_0, timer_idx, ALARM_VAL_US);
     // Habilita interrupcao
-    ret = timer_enable_intr(TIMER_GROUP_0, timer_idx);
-    ESP_ERROR_CHECK(ret);
+    timer_enable_intr(TIMER_GROUP_0, timer_idx);
     // Registra a chamada da interrupcao
     timer_isr_register(TIMER_GROUP_0, timer_idx, timer0_ISR, (void *)alarm_counter, ESP_INTR_FLAG_IRAM, NULL);
 }
 
 void app_main(void)
 {
+    double init_time, final_time;
+    double * time_ptr;
     config_timer(TIMER_0, WITH_RELOAD);
+    dac_output_enable(DAC_CHANNEL_1);
     while (1) {
-        printf("[%d] Hello world!\n", alarm_counter);
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        time_ptr = &init_time;
+        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
+        dac_output_voltage(DAC_CHANNEL_1, 200);
+        time_ptr = &final_time;
+        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
+        printf("Delta time: %f ms\n", (final_time - init_time)*1000);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
