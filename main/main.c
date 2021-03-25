@@ -12,6 +12,9 @@
 
 uint32_t alarm_counter = 0;
 
+TaskHandle_t dac_task_handler;
+TaskHandle_t watermark_task_handler;
+
 /* Rotina de interrupcao */
 static void IRAM_ATTR timer0_ISR(void *ptr)
 {
@@ -44,12 +47,10 @@ static void config_timer(int timer_idx, bool auto_reload)
     timer_isr_register(TIMER_GROUP_0, timer_idx, timer0_ISR, (void *)alarm_counter, ESP_INTR_FLAG_IRAM, NULL);
 }
 
-void app_main(void)
+static void dac_gpio_task(void *arg)
 {
     double init_time, final_time;
     double * time_ptr;
-    config_timer(TIMER_0, WITH_RELOAD);
-    dac_output_enable(DAC_CHANNEL_1);
     while (1) {
         time_ptr = &init_time;
         timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
@@ -57,6 +58,26 @@ void app_main(void)
         time_ptr = &final_time;
         timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
         printf("Delta time: %f ms\n", (final_time - init_time)*1000);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+}
+
+static void water_mark_stack_task(void *arg)
+{
+    while (1) {
+        printf("------WATERMARKS-------\n");
+        printf("dac_task_watermark: %d\n", uxTaskGetStackHighWaterMark(dac_task_handler));
+        printf("stack_task_watermark: %d\n", uxTaskGetStackHighWaterMark(NULL));
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
+}
+
+void app_main(void)
+{
+    config_timer(TIMER_0, WITH_RELOAD);
+    dac_output_enable(DAC_CHANNEL_1);
+
+    //Create and start stats task
+    xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 3, dac_task_handler, 0);
+    xTaskCreatePinnedToCore(water_mark_stack_task, "stack_wm", 4096, NULL, 0, watermark_task_handler, 0);
 }
