@@ -10,6 +10,8 @@
 #include "driver/i2s.h"
 #include "driver/adc.h"
 
+#include "app_bt.h"
+
 #define TIMER_DIVIDER          16
 #define TIMER_SCALE            (TIMER_BASE_CLK / TIMER_DIVIDER)     // convert counter value to seconds
 #define TIMER_INTERVAL_SEC     (20)                                  // sample test interval for the first timer
@@ -213,6 +215,7 @@ static void water_mark_stack_task(void *arg)
     }
 }
 
+
 void app_main(void)
 {
     config_timer(TIMER_0, WITH_RELOAD);
@@ -221,8 +224,11 @@ void app_main(void)
     dac_output_enable(DAC_CHANNEL_1);
     config_i2s_adc();
 
+    bluetooth_init();
+
     //Create and start stats task
     xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, dac_task_handler, 0);
+    xTaskCreatePinnedToCore(bluetooth_mng_task, "bluetooth", 2048, NULL, 1, bluetooth_handler, 1);
 //    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 4096, NULL, 3, gen_signal_handler, 1);
 //    xTaskCreatePinnedToCore(i2c_adc_task, "adc_i2c", 4096, NULL, 1, i2c_adc_task_handler, 0);
 //    xTaskCreatePinnedToCore(water_mark_stack_task, "stack_wm", 4096, NULL, 0, watermark_task_handler, 0);
