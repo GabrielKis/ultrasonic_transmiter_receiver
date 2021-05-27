@@ -7,8 +7,7 @@
 #include "driver/timer.h"
 #include "driver/dac.h"
 
-#include "driver/i2s.h"
-#include "driver/adc.h"
+#include "i2c_dac.h"
 
 #define TIMER_DIVIDER          16
 #define TIMER_SCALE            (TIMER_BASE_CLK / TIMER_DIVIDER)     // convert counter value to seconds
@@ -20,7 +19,6 @@ uint64_t alarm_counter = 0;
 
 TaskHandle_t dac_task_handler;
 TaskHandle_t gen_signal_handler;
-TaskHandle_t i2c_adc_task_handler;
 TaskHandle_t watermark_task_handler;
 
 /* Rotina de interrupcao */
@@ -31,25 +29,6 @@ static void IRAM_ATTR timer0_ISR(void *ptr)
     alarm_counter++;
     // liberar task que seta valores na GPIO - Sinal de saida
 }
-
-//i2s number
-#define EXAMPLE_I2S_NUM           (0)
-//i2s sample rate
-#define EXAMPLE_I2S_SAMPLE_RATE   (1000 * 1000)
-//i2s data bits
-#define EXAMPLE_I2S_SAMPLE_BITS   (16)
-//enable display buffer for debug
-#define EXAMPLE_I2S_BUF_DEBUG     (0)
-//I2S read buffer length
-#define EXAMPLE_I2S_READ_LEN      (16 * 1024)
-//I2S data format
-#define EXAMPLE_I2S_FORMAT        (I2S_CHANNEL_FMT_RIGHT_LEFT)
-//I2S channel number
-#define EXAMPLE_I2S_CHANNEL_NUM   ((EXAMPLE_I2S_FORMAT < I2S_CHANNEL_FMT_ONLY_RIGHT) ? (2) : (1))
-//I2S built-in ADC unit
-#define I2S_ADC_UNIT              ADC_UNIT_1
-//I2S built-in ADC channel
-#define I2S_ADC_CHANNEL           ADC1_CHANNEL_0
 
 /* Inicializacao TIMER_0 - group_0 */
 static void config_timer(int timer_idx, bool auto_reload)
@@ -73,31 +52,6 @@ static void config_timer(int timer_idx, bool auto_reload)
     timer_enable_intr(TIMER_GROUP_0, timer_idx);
     // Registra a chamada da interrupcao
     timer_isr_register(TIMER_GROUP_0, timer_idx, timer0_ISR, (void *)alarm_counter, ESP_INTR_FLAG_IRAM, NULL);
-}
-
-void config_i2s_adc(void)
-{
-    esp_err_t err;
-    int i2s_num = EXAMPLE_I2S_NUM;
-    i2s_config_t i2s_config = {
-    .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN,
-    .sample_rate =  EXAMPLE_I2S_SAMPLE_RATE,
-    .bits_per_sample = EXAMPLE_I2S_SAMPLE_BITS,
-    .communication_format = I2S_COMM_FORMAT_STAND_MSB,
-    .channel_format = EXAMPLE_I2S_FORMAT,
-    .intr_alloc_flags = 0,
-    .dma_buf_count = 2,
-    .dma_buf_len = 1024,
-    .use_apll = 1,
-    };
-    //install and start i2s driver
-    err = i2s_driver_install(i2s_num, &i2s_config, 0, NULL);
-    ESP_ERROR_CHECK(err);
-    //init DAC pad
-    //i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
-    //init ADC pad
-    err = i2s_set_adc_mode(I2S_ADC_UNIT, I2S_ADC_CHANNEL);
-    ESP_ERROR_CHECK(err);
 }
 
 static void dac_gpio_task(void *arg)
@@ -178,31 +132,6 @@ static void generate_signal_task(void *arg)
     }
 }
 
-static void i2c_adc_task(void *arg)
-{
-    double init_time, final_time;
-    double * time_ptr;
-
-    while (1) {
-        int i2s_read_len = EXAMPLE_I2S_READ_LEN;
-        size_t bytes_read;
-
-        // ADC I2C TEST
-        char* i2s_read_buff = (char*) calloc(i2s_read_len, sizeof(char));
-        i2s_adc_enable(EXAMPLE_I2S_NUM);
-        time_ptr = &init_time;
-        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        i2s_read(EXAMPLE_I2S_NUM, (void*) i2s_read_buff, i2s_read_len, &bytes_read, portMAX_DELAY);
-        time_ptr = &final_time;
-        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        printf("ADC 1000 writes: %lf ms ! bytes read :%d\n\n", (final_time - init_time)*1000, bytes_read);
-        i2s_adc_disable(EXAMPLE_I2S_NUM);
-        free(i2s_read_buff);
-        i2s_read_buff = NULL;
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
-}
-
 static void water_mark_stack_task(void *arg)
 {
     while (1) {
@@ -218,8 +147,8 @@ void app_main(void)
     config_timer(TIMER_0, WITH_RELOAD);
     config_gpio();
     // PINO 25 - dac
-    dac_output_enable(DAC_CHANNEL_1);
-    config_i2s_adc();
+//    dac_output_enable(DAC_CHANNEL_1);
+//    config_i2s_adc();
 
     //Create and start stats task
     xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, dac_task_handler, 0);
