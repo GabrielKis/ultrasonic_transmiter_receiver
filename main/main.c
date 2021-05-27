@@ -18,7 +18,6 @@
 uint64_t alarm_counter = 0;
 
 TaskHandle_t dac_task_handler;
-TaskHandle_t gen_signal_handler;
 TaskHandle_t watermark_task_handler;
 
 /* Rotina de interrupcao */
@@ -114,20 +113,6 @@ static void dac_gpio_task(void *arg)
         printf("REG BUILT: 0x%.8x \n", bit32_register);
         printf("BIT23: 0x%.8x \n\n", BIT23);
 
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
-}
-
-static void generate_signal_task(void *arg)
-{
-    uint8_t period_signal_buffer[SAMPLES_PER_PERIOD];
-    uint8_t buffer_index;
-    buffer_index = 0;
-    while(1)
-    {
-        period_signal_buffer[buffer_index] = lookup_sine_table[buffer_index];
-        printf("look_up_table_value - %d\n", period_signal_buffer[buffer_index]);
-        printf("value = %d\n", 2000 / portTICK_PERIOD_MS);
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }

@@ -4,6 +4,9 @@
 #include "driver/gpio.h"
 #include "pinout.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #define SIGNAL_FREQ             40 * 1000   // output signal 40kHz
 #define SAMPLE_RATE             1000 * 1000 // Sample rate 1MSpS
 #define SAMPLES_PER_PERIOD      25          // 1MSpS/40kHz
@@ -15,7 +18,10 @@ static const uint8_t lookup_sine_table[SAMPLES_PER_PERIOD+1] = {
     0x60,0x80
 };
 
+TaskHandle_t gen_signal_handler;
+
 void config_gpio(void);
 void generate_sine_wave(void);
+void generate_signal_task(void *arg);
 
 #endif

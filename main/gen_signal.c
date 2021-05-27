@@ -44,4 +44,18 @@ void generate_sine_wave(void)
     //REG_WRITE(GPIO_ENABLE_REG, BIT2);//Define o GPIO2 como saída
 }
 
+void generate_signal_task(void *arg)
+{
+    uint8_t period_signal_buffer[SAMPLES_PER_PERIOD];
+    uint8_t buffer_index;
+    buffer_index = 0;
+    while(1)
+    {
+        period_signal_buffer[buffer_index] = lookup_sine_table[buffer_index];
+        printf("look_up_table_value - %d\n", period_signal_buffer[buffer_index]);
+        printf("value = %d\n", 2000 / portTICK_PERIOD_MS);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+}
+
 //TODO: MAKE A FUNCTION TO WRITE UINT8_T TO GPIO PORTS
