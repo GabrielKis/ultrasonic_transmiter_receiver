@@ -17,7 +17,6 @@ TaskHandle_t dac_task_handler;
 TaskHandle_t watermark_task_handler;
 TaskHandle_t main_task_handler;
 
-
 static void dac_gpio_task(void *arg)
 {
     uint32_t bit32_register = 0x00000000;
@@ -127,14 +126,16 @@ static void main_task(void *arg)
         }else if (state_ctrl == 2){
             // espera os dados do receptor
             printf("state_ctrl: %d\n", state_ctrl);
-            for(uint8_t i=0; i<DATA_RECV_MQTT_PAYLOAD_SIZE; i++)
-                printf("%c", data_received_mqtt[i]);
-            printf("\n");
-            // interpretar frame recebido
-            // qtd_periods
-            // period values
-            if (data_received_mqtt[4] != 0)
+            if (get_recv_flag()){
+                for(uint8_t i=0; i<DATA_RECV_MQTT_PAYLOAD_SIZE; i++)
+                    printf("%c", data_received_mqtt[i]);
+                printf("\n");
+                // interpretar frame recebido
+                // qtd_periods
+                // period values
                 state_ctrl = 3;
+                write_recv_flag(0);
+            }
         }else if (state_ctrl == 3){
             printf("state_ctrl: %d\n", state_ctrl);
             printf("CHAMA TASK PARA ENVIO DOS DADOS\n");
@@ -147,28 +148,20 @@ static void main_task(void *arg)
             // Publica valores dos dados enviados
         }else if (state_ctrl == 5){
             printf("state_ctrl: %d\n", state_ctrl);
+            // volta para estado 1
             printf("VOLTA PARA O ESTADO 1\n");
-            // LIMPA OS VETORES DE RECEBIMENTO E RETORNO
-            // state_ctrl = 1;
+            state_ctrl = 1;
             // verifica retorno dos dados publicados
             // desconecta do broker
-            // volta para estado 1
+            mqtt_app_stop(esp_mqtt_client);
         }
         // checa estado do broker
             // desconectado -> uxBits = 0x01
         // checa estado do wifi (quantos clientes)
             // desconectado -> uxbits = 0x00
-
-        //broker ja conectado, entra na maquina de estados
-        // caso 1:
-            // espera ate que topicos "cmd e waveform" sejam recebidos e vai para caso 2
-        // caso 2:
-            // publica topicos "wf_sent" e "wf_recv" e volta para caso 1
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
-
-
 
 void app_main(void)
 {
@@ -188,7 +181,6 @@ void app_main(void)
 
     wifi_init_softap();
 
-    //esp_mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client = mqtt_init();
 
     //Create and start stats task

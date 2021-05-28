@@ -26,6 +26,8 @@ const esp_mqtt_client_config_t mqtt_cfg = {
     .transport = MQTT_TRANSPORT_OVER_WS,
 };
 
+uint8_t data_recv_flag = 0;
+
 void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     BaseType_t xHigherPriorityTaskWoken, xResult;
@@ -126,6 +128,7 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
             for (uint8_t i =0; i<DATA_RECV_MQTT_PAYLOAD_SIZE; i++){
                 data_received_mqtt[i] = *(event->data + i);
             }
+            data_recv_flag = 1;
             break;
         case MQTT_EVENT_ERROR:
             ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -143,12 +146,26 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 }
 
 esp_mqtt_client_handle_t mqtt_init(void){
-    return esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_handle_t client;
+    client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
+    return client;
 }
 
 void mqtt_app_start(esp_mqtt_client_handle_t client)
 {
-    //esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_config);
-    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start(client);
+}
+
+void mqtt_app_stop(esp_mqtt_client_handle_t client)
+{
+    esp_mqtt_client_stop(client);
+}
+
+void write_recv_flag(uint8_t value){
+    data_recv_flag = value;
+}
+
+uint8_t get_recv_flag(void){
+    return data_recv_flag;
 }
