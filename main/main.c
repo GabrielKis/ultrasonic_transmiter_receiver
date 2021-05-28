@@ -97,6 +97,8 @@ static void main_task(void *arg)
     uint8_t state_ctrl = 0;
     const TickType_t xTicksToWait = 100 / portTICK_PERIOD_MS;
 
+    uint8_t publish_flag = 0;
+
     while (1) {
 
         /*state_ctrl
@@ -143,14 +145,24 @@ static void main_task(void *arg)
             // vai para task de envio dos dados
         }else if (state_ctrl == 4){
             printf("state_ctrl: %d\n", state_ctrl);
-            printf("PUBLICA OS VALORES PARA O PYTHON\n");
-            state_ctrl = 5;
             // Publica valores dos dados enviados
+            printf("PUBLICA OS VALORES PARA O PYTHON\n");
+            if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_send", "data", 0, 2, 0) > 0){
+                publish_flag += 0x01;
+            }
+            if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_recv", "data", 0, 2, 0) > 0){
+                publish_flag += 0x02;
+            }
+            // Certificar que valores foram publicados antes de alterar o estado
+            if (publish_flag == 0x03){
+                state_ctrl = 5;
+            }
         }else if (state_ctrl == 5){
             printf("state_ctrl: %d\n", state_ctrl);
             // volta para estado 1
             printf("VOLTA PARA O ESTADO 1\n");
             state_ctrl = 1;
+            publish_flag = 0x00;
             // verifica retorno dos dados publicados
             // desconecta do broker
             mqtt_app_stop(esp_mqtt_client);
