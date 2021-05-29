@@ -126,8 +126,8 @@ static void main_task(void *arg)
                 }
         }else if (state_ctrl == 1){
             printf("state_ctrl: %d\n", state_ctrl);
-            mqtt_app_start(esp_mqtt_client);
-            state_ctrl = 2;
+            if (mqtt_app_start(esp_mqtt_client) == 0)
+                state_ctrl = 2;
         }else if (state_ctrl == 2){
             // espera os dados do receptor
             printf("state_ctrl: %d\n", state_ctrl);

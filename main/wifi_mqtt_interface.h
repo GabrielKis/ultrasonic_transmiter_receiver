@@ -22,7 +22,7 @@ uint8_t data_received_mqtt[DATA_RECV_MQTT_PAYLOAD_SIZE];
 
 void wifi_init_softap(void);
 esp_mqtt_client_handle_t mqtt_init(void);
-void mqtt_app_start(esp_mqtt_client_handle_t client);
+esp_err_t mqtt_app_start(esp_mqtt_client_handle_t client);
 void mqtt_app_stop(esp_mqtt_client_handle_t client);
 
 void write_recv_flag(uint8_t value);

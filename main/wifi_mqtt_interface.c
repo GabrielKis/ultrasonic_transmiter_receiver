@@ -150,9 +150,9 @@ esp_mqtt_client_handle_t mqtt_init(void){
     return client;
 }
 
-void mqtt_app_start(esp_mqtt_client_handle_t client)
+esp_err_t mqtt_app_start(esp_mqtt_client_handle_t client)
 {
-    esp_mqtt_client_start(client);
+    return esp_mqtt_client_start(client);
 }
 
 void mqtt_app_stop(esp_mqtt_client_handle_t client)
