@@ -17,6 +17,9 @@ TaskHandle_t dac_task_handler;
 TaskHandle_t watermark_task_handler;
 TaskHandle_t main_task_handler;
 
+char wf_send_buffer[DAC_SAMPLES_BUF_SIZE];
+char wf_recv_buffer[DAC_SAMPLES_BUF_SIZE];
+
 static void dac_gpio_task(void *arg)
 {
     uint32_t bit32_register = 0x00000000;
@@ -147,10 +150,10 @@ static void main_task(void *arg)
             printf("state_ctrl: %d\n", state_ctrl);
             // Publica valores dos dados enviados
             printf("PUBLICA OS VALORES PARA O PYTHON\n");
-            if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_send", "data", 0, 2, 0) > 0){
+            if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_send", wf_send_buffer, DAC_SAMPLES_BUF_SIZE, 2, 0) > 0){
                 publish_flag += 0x01;
             }
-            if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_recv", "data", 0, 2, 0) > 0){
+            if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_recv", wf_recv_buffer, DAC_SAMPLES_BUF_SIZE, 2, 0) > 0){
                 publish_flag += 0x02;
             }
             // Certificar que valores foram publicados antes de alterar o estado
@@ -167,10 +170,6 @@ static void main_task(void *arg)
             // desconecta do broker
             mqtt_app_stop(esp_mqtt_client);
         }
-        // checa estado do broker
-            // desconectado -> uxBits = 0x01
-        // checa estado do wifi (quantos clientes)
-            // desconectado -> uxbits = 0x00
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
@@ -183,6 +182,11 @@ void app_main(void)
     // PINO 25 - dac
 //    dac_output_enable(DAC_CHANNEL_1);
 //    config_i2s_adc();
+
+    for (uint16_t i=0; i<DAC_SAMPLES_BUF_SIZE; i++){
+        wf_recv_buffer[i] = i%255;
+        wf_send_buffer[DAC_SAMPLES_BUF_SIZE - i] = i%255;
+    }
 
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {

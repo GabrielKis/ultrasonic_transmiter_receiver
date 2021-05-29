@@ -11,6 +11,8 @@
 #define SAMPLE_RATE             1000 * 1000 // Sample rate 1MSpS
 #define SAMPLES_PER_PERIOD      25          // 1MSpS/40kHz
 
+#define DAC_SAMPLES_BUF_SIZE    30000
+
 static const uint8_t lookup_sine_table[SAMPLES_PER_PERIOD+1] = {
     0x80,0x9f,0xbd,0xd7,0xeb,0xf9,0xff,0xfd,
     0xf3,0xe2,0xca,0xae,0x8f,0x70,0x51,0x35,
