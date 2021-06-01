@@ -23,7 +23,7 @@ static const uint8_t lookup_sine_table[SAMPLES_PER_PERIOD+1] = {
 TaskHandle_t gen_signal_handler;
 
 void config_gpio(void);
-void generate_sine_wave(void);
+void generate_wave(uint8_t * data_buffer);
 void generate_signal_task(void *arg);
 
 #endif

@@ -6,6 +6,7 @@
  */
 
 #include "gen_signal.h"
+#include "config_timers.h"
 
 /**
  * @brief Config Signal output GPIOs
@@ -34,13 +35,61 @@ void config_gpio(void)
  * @note Expand to sine various formats (received via usb)
  *
  */
-void generate_sine_wave(void)
+void generate_wave(uint8_t * data_buffer)
 {
+    double init_time, final_time;
+    double * time_ptr;
+    uint16_t qtd_periods = 0x0000;
+
+    qtd_periods = (data_buffer[0] << 8) + data_buffer[1];
+    printf("qtd_periods: %d\n", qtd_periods);
+
+    // dois loops
+    // quantidade de iteracoes
+    // valores dentro do periodo
+    // preencher buffer de resposta com zeros
+
+    // garantir 5MSPS
+
     //TODO: Receive as param buffer containing um period data
-    for(int i=0; i<SAMPLES_PER_PERIOD; i++){
-        //period_signal_buffer[i] = lookup_sine_table[i];
-        //printf("look_up_table_value - %d\n", period_signal_buffer[i]);
+    uint64_t prov = 0;
+
+    // iniciar timer
+    start_test_timer();
+    start_main_timer();
+
+    for (uint16_t jjj=0; jjj < 10; jjj++){
+
+        //time_ptr = &init_time;
+        //timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
+
+        prov = get_micro_sec_counter();
+
+        printf("buffer received: %d\n", jjj);
+        for(int i=2; i<127; i++){
+            printf("%d ", data_buffer[i]);
+            while(!get_data_ready_flag()){}
+            reset_data_ready_flag();
+            REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
+            //period_signal_buffer[i] = lookup_sine_table[i];
+            //printf("look_up_table_value - %d\n", period_signal_buffer[i]);
+        }
+        //printf("\n");
+
+
+        //time_ptr = &final_time;
+        //timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
+        //printf("125 samples in: %lf us\n", (final_time - init_time)*10);
     }
+
+    stop_test_timer();
+    stop_main_timer();
+
+    // Verificação de taxa da GPIO
+
+
+
+
     //REG_WRITE(GPIO_ENABLE_REG, BIT2);//Define o GPIO2 como saída
 }
 
