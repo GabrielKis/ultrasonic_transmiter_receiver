@@ -144,6 +144,7 @@ static void main_task(void *arg)
         }else if (state_ctrl == 3){
             printf("state_ctrl: %d\n", state_ctrl);
             printf("CHAMA TASK PARA ENVIO DOS DADOS\n");
+            generate_wave(data_received_mqtt);
             state_ctrl = 4;
             // vai para task de envio dos dados
         }else if (state_ctrl == 4){
@@ -178,6 +179,7 @@ void app_main(void)
 {
     //config_timer(TIMER_0, WITH_RELOAD);
     config_timer(0, 1);
+    config_timer(1, 1);
     config_gpio();
     // PINO 25 - dac
 //    dac_output_enable(DAC_CHANNEL_1);
