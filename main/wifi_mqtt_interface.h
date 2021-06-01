@@ -13,7 +13,7 @@
 #define EXAMPLE_ESP_WIFI_CHANNEL   1
 #define EXAMPLE_MAX_STA_CONN       1
 
-#define DATA_RECV_MQTT_PAYLOAD_SIZE 254
+#define DATA_RECV_MQTT_PAYLOAD_SIZE 2 + (125)
 
 EventGroupHandle_t wifi_event_group;
 esp_mqtt_client_handle_t esp_mqtt_client;
