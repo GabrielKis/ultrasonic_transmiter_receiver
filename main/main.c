@@ -175,11 +175,28 @@ static void main_task(void *arg)
     }
 }
 
+void generate_signal_task(void *arg)
+{
+    uint8_t period_signal_buffer[SAMPLES_PER_PERIOD];
+    uint8_t buffer_index;
+    buffer_index = 0;
+
+    uint64_t init_time = 0;
+    uint64_t final_time = 0;
+
+    while(1)
+    {
+        generate_wave(data_received_mqtt);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+}
+
+
 void app_main(void)
 {
     //config_timer(TIMER_0, WITH_RELOAD);
     config_timer(0, 1);
-    config_timer(1, 1);
+    config_test_timer(1);
     config_gpio();
     // PINO 25 - dac
 //    dac_output_enable(DAC_CHANNEL_1);
@@ -203,8 +220,8 @@ void app_main(void)
 
     //Create and start stats task
 //    xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, dac_task_handler, 0);
-//    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 4096, NULL, 3, gen_signal_handler, 1);
+    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 4096, NULL, 3, gen_signal_handler, 1);
 //    xTaskCreatePinnedToCore(i2c_adc_task, "adc_i2c", 4096, NULL, 1, i2c_adc_task_handler, 0);
 //    xTaskCreatePinnedToCore(water_mark_stack_task, "stack_wm", 4096, NULL, 0, watermark_task_handler, 0);
-    xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, main_task_handler, 1);
+//    xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, main_task_handler, 1);
 }
