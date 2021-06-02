@@ -39,12 +39,12 @@ void config_timer(int timer_idx, bool auto_reload)
     // Configura o alarme
     timer_set_alarm_value(TIMER_GROUP_0, timer_idx, ALARM_VAL_US);
     // Habilita interrupcao
-    timer_enable_intr(TIMER_GROUP_0, timer_idx);
+    //timer_enable_intr(TIMER_GROUP_0, timer_idx);
     // Registra a chamada da interrupcao
-    timer_isr_register(TIMER_GROUP_0, timer_idx, timer0_ISR, (void *)alarm_counter, ESP_INTR_FLAG_IRAM, NULL);
+    //timer_isr_register(TIMER_GROUP_0, timer_idx, timer0_ISR, (void *)alarm_counter, ESP_INTR_FLAG_IRAM, NULL);
 }
 
-void config_test_timer(int timer_idx, bool auto_reload)
+void config_test_timer(bool auto_reload)
 {
     timer_config_t config = {
         .divider = 80,
@@ -56,15 +56,15 @@ void config_test_timer(int timer_idx, bool auto_reload)
     };
 
     // Inicia o timer (idx) do grupo 0 com as configs acima
-    timer_init(TIMER_GROUP_0, timer_idx, &config);
+    timer_init(TIMER_GROUP_0, TIMER_1, &config);
     // Seta o timer com 0x00000000 (ULL)
-    timer_set_counter_value(TIMER_GROUP_0, timer_idx, 0x00000000ULL);
+    timer_set_counter_value(TIMER_GROUP_0, TIMER_1, 0x00000000ULL);
     // Configura o alarme
-    timer_set_alarm_value(TIMER_GROUP_0, timer_idx, 1);
+    timer_set_alarm_value(TIMER_GROUP_0, TIMER_1, 1 * TIMER_SCALE);
     // Habilita interrupcao
-    timer_enable_intr(TIMER_GROUP_0, timer_idx);
+    //timer_enable_intr(TIMER_GROUP_0, TIMER_1);
     // Registra a chamada da interrupcao
-    timer_isr_register(TIMER_GROUP_0, timer_idx, timer_teste_ISR, (void *)microsec_counter, ESP_INTR_FLAG_IRAM, NULL);
+    //timer_isr_register(TIMER_GROUP_0, TIMER_1, timer_teste_ISR, (void *)microsec_counter, ESP_INTR_FLAG_IRAM, NULL);
 }
 
 uint8_t get_data_ready_flag(void){
