@@ -37,74 +37,51 @@ void config_gpio(void)
  */
 void generate_wave(uint8_t * data_buffer)
 {
-    double init_time, final_time;
-    double * time_ptr;
+    uint64_t init_time, final_time;
+    uint64_t * time_ptr;
+
     uint16_t qtd_periods = 0x0000;
 
     qtd_periods = (data_buffer[0] << 8) + data_buffer[1];
     printf("qtd_periods: %d\n", qtd_periods);
 
-    // dois loops
-    // quantidade de iteracoes
-    // valores dentro do periodo
-    // preencher buffer de resposta com zeros
-
     // garantir 5MSPS
-
-    //TODO: Receive as param buffer containing um period data
-    uint64_t prov = 0;
+    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
+    //  USADO PARA VERIFICAR O TEMPO DE ESCRITA
+    time_ptr = &init_time;
+    timer_get_counter_value(TIMER_GROUP_0, TIMER_1, (uint64_t *)time_ptr);
 
     // iniciar timer
     start_test_timer();
-    start_main_timer();
 
-    for (uint16_t jjj=0; jjj < 10; jjj++){
-
-        //time_ptr = &init_time;
-        //timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-
-        prov = get_micro_sec_counter();
-
-        printf("buffer received: %d\n", jjj);
-        for(int i=2; i<127; i++){
-            printf("%d ", data_buffer[i]);
-            while(!get_data_ready_flag()){}
-            reset_data_ready_flag();
+    // loop que repete a quantidade de indices
+    //qtd_periods = 40000;
+    qtd_periods = 50;
+    //for (uint16_t periods_index = 0; periods_index < qtd_periods; periods_index++){
+        // cada amostra tem
+        for(uint32_t i=0; i<125 * qtd_periods; i++){
+            // substituir por funcao que Lê e converte o valor
             REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
-            //period_signal_buffer[i] = lookup_sine_table[i];
-            //printf("look_up_table_value - %d\n", period_signal_buffer[i]);
+            //REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
+            //REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
+            //REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
+            //read_register = REG_READ(GPIO_IN_REG);
         }
-        //printf("\n");
+    // apos escrever todos os valores de forma de onda, zerar o registrador de saida
+    REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
 
-
-        //time_ptr = &final_time;
-        //timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        //printf("125 samples in: %lf us\n", (final_time - init_time)*10);
-    }
+    //*  USADO PARA VERIFICAR O TEMPO DE ESCRITA
+    time_ptr = &final_time;
+    timer_get_counter_value(TIMER_GROUP_0, TIMER_1, (uint64_t *)time_ptr);
+    printf("GPIO %d writes: %lld us\n", (qtd_periods * 125), (final_time - init_time));
+    //*/
 
     stop_test_timer();
-    stop_main_timer();
-
-    // Verificação de taxa da GPIO
-
-
-
-
     //REG_WRITE(GPIO_ENABLE_REG, BIT2);//Define o GPIO2 como saída
 }
 
-void generate_signal_task(void *arg)
-{
-    uint8_t period_signal_buffer[SAMPLES_PER_PERIOD];
-    uint8_t buffer_index;
-    buffer_index = 0;
-    while(1)
-    {
-        period_signal_buffer[buffer_index] = lookup_sine_table[buffer_index];
-        printf("look_up_table_value - %d\n", period_signal_buffer[buffer_index]);
-        printf("value = %d\n", 2000 / portTICK_PERIOD_MS);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
+void write_dac_out_data(uint8_t dac_sample_value){
+
 }
 
 //TODO: MAKE A FUNCTION TO WRITE UINT8_T TO GPIO PORTS
