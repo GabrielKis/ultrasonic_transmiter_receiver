@@ -7,9 +7,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#define SIGNAL_FREQ             40 * 1000   // output signal 40kHz
-#define SAMPLE_RATE             1000 * 1000 // Sample rate 1MSpS
-#define SAMPLES_PER_PERIOD      25          // 1MSpS/40kHz
+#define SIGNAL_FREQ             40 * 1000                       // output signal 40kHz
+#define SAMPLE_RATE             4 * 1000 * 1000                 // Sample rate 4MSpS
+#define SAMPLES_PER_PERIOD      ( SAMPLE_RATE/SIGNAL_FREQ )
 
 #define DAC_SAMPLES_BUF_SIZE    30000
 
