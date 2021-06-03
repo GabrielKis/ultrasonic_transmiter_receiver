@@ -220,7 +220,7 @@ void app_main(void)
 
     //Create and start stats task
 //    xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, dac_task_handler, 0);
-    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 4096, NULL, 3, gen_signal_handler, 1);
+    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, gen_signal_handler, 1);
 //    xTaskCreatePinnedToCore(i2c_adc_task, "adc_i2c", 4096, NULL, 1, i2c_adc_task_handler, 0);
 //    xTaskCreatePinnedToCore(water_mark_stack_task, "stack_wm", 4096, NULL, 0, watermark_task_handler, 0);
 //    xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, main_task_handler, 1);
