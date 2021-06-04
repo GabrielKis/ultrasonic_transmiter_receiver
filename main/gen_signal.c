@@ -40,23 +40,10 @@ void config_gpio(void)
     gpio_config(&config_gpio);
 }
 
-void write_dac_out_data_to_gpio_register(uint8_t dac_sample_value){
-    uint32_t bit32_register = 0x00000000;
-    bit32_register = ((dac_sample_value & 0b00000001) * BIT23 + \
-                        ((dac_sample_value & 0b00000010) >> 1) * BIT22 + \
-                        ((dac_sample_value & 0b00000100) >> 2) * BIT1 + \
-                        ((dac_sample_value & 0b00001000) >> 3) * BIT3 + \
-                        ((dac_sample_value & 0b00010000) >> 4) * BIT21 + \
-                        ((dac_sample_value & 0b00100000) >> 5) * BIT19 + \
-                        ((dac_sample_value & 0b01000000) >> 6) * BIT18 + \
-                        ((dac_sample_value & 0b10000000) >> 7) * BIT5);
-    REG_WRITE(GPIO_OUT_W1TC_REG, bit32_register);
-}
-
 /**
- * @brief Generate sine wave
+ * @brief Generate dac wave
  *
- * @note Expand to sine various formats (received via usb)
+ * @note Write to GPIO 8-bit data
  *
  */
 void generate_wave(uint8_t * data_buffer)
@@ -69,56 +56,45 @@ void generate_wave(uint8_t * data_buffer)
     qtd_periods = (data_buffer[0] << 8) + data_buffer[1];
     qtd_periods = 40000;
     printf("qtd_periods: %d\n", qtd_periods);
+    printf("SAMPLE PER PERIOD: %d\n", SAMPLES_PER_PERIOD);
+    printf("SAMPLE RATE: %d kSPS\n", SAMPLE_RATE/1000);
 
-    uint8_t sample_value = 0;
-    uint8_t waveform_buffer[SAMPLES_PER_PERIOD];
-    for (uint8_t index=0; index<100; index++){
-        waveform_buffer[index] = data_buffer[index+2];
+    dac_data_t sample_value;
+    dac_data_t waveform_buffer[SAMPLES_PER_PERIOD];
+    for (uint8_t index=0; index<SAMPLES_PER_PERIOD; index++){
+        waveform_buffer[index].dac_sample = data_buffer[index+2];
     }
 
-    // garantir 5MSPS
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
+    uint32_t bit32_register;
+
     //  USADO PARA VERIFICAR O TEMPO DE ESCRITA
+    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
     time_ptr = &init_time;
     timer_get_counter_value(TIMER_GROUP_0, TIMER_1, (uint64_t *)time_ptr);
-
     // iniciar timer
     start_test_timer();
 
-    // loop que repete a quantidade de indices
-    //for (uint16_t periods_index = 0; periods_index < qtd_periods; periods_index++){
-        // cada amostra tem
-    uint32_t bit32_register = 0x00000000;
-        for(uint32_t i=0; i<SAMPLES_PER_PERIOD * qtd_periods; i++){
-            // substituir por funcao que Lê e converte o valor
-            //write_dac_out_data_to_gpio_register(prov_data);
-            bit32_register = 0x00000000;
-            sample_value = waveform_buffer[0];
-            bit32_register = ((sample_value & 0b00000001) * BIT23 + \
-                                ((sample_value & 0b00000010) >> 1) * BIT22 + \
-                                ((sample_value & 0b00000100) >> 2) * BIT1 + \
-                                ((sample_value & 0b00001000) >> 3) * BIT3 + \
-                                ((sample_value & 0b00010000) >> 4) * BIT21 + \
-                                ((sample_value & 0b00100000) >> 5) * BIT19 + \
-                                ((sample_value & 0b01000000) >> 6) * BIT18 + \
-                                ((sample_value & 0b10000000) >> 7) * BIT5);
-            REG_WRITE(GPIO_OUT_W1TC_REG, bit32_register);
-            //REG_WRITE(GPIO_OUT_W1TC_REG, bit32_register);
-            //REG_WRITE(GPIO_OUT_W1TC_REG, bit32_register);
-            //REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
-            //REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
-            //REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
-            //read_register = REG_READ(GPIO_IN_REG);
-        }
+    for(uint32_t i=0; i<SAMPLES_PER_PERIOD * qtd_periods; i++){
+        bit32_register = 0x00000000;
+        sample_value.dac_sample = waveform_buffer[i%SAMPLES_PER_PERIOD].dac_sample;
+        bit32_register = ((sample_value.dac_sample_bits.bit0 << 23) + \
+                            (sample_value.dac_sample_bits.bit1 << 22)+ \
+                            (sample_value.dac_sample_bits.bit2 << 1) + \
+                            (sample_value.dac_sample_bits.bit3 << 3) + \
+                            (sample_value.dac_sample_bits.bit4 << 21) + \
+                            (sample_value.dac_sample_bits.bit5 << 19) + \
+                            (sample_value.dac_sample_bits.bit6 << 18) + \
+                            (sample_value.dac_sample_bits.bit7 << 5));
+        REG_WRITE(GPIO_OUT_W1TS_REG, (DAC_OUTPUT_REG_MASK & bit32_register));
+        REG_WRITE(GPIO_OUT_W1TC_REG, (DAC_OUTPUT_REG_MASK & ~(bit32_register)));
+        //read_register = REG_READ(GPIO_IN_REG);
+    }
     // apos escrever todos os valores de forma de onda, zerar o registrador de saida
-    REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
+    REG_WRITE(GPIO_OUT_W1TC_REG, DAC_OUTPUT_REG_MASK);
 
-    //*  USADO PARA VERIFICAR O TEMPO DE ESCRITA
+    //  USADO PARA VERIFICAR O TEMPO DE ESCRITA
     time_ptr = &final_time;
     timer_get_counter_value(TIMER_GROUP_0, TIMER_1, (uint64_t *)time_ptr);
-    printf("GPIO %d writes: %lld us\n", (qtd_periods * 125), (final_time - init_time));
-    //*/
-
+    printf("GPIO %d writes: %lld us\n", (qtd_periods * SAMPLES_PER_PERIOD), (final_time - init_time));
     stop_test_timer();
-    //REG_WRITE(GPIO_ENABLE_REG, BIT2);//Define o GPIO2 como saída
 }
