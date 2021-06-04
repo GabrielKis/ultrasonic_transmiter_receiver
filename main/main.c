@@ -18,7 +18,7 @@ TaskHandle_t watermark_task_handler;
 TaskHandle_t main_task_handler;
 
 char wf_send_buffer[DAC_SAMPLES_BUF_SIZE];
-char wf_recv_buffer[DAC_SAMPLES_BUF_SIZE];
+dac_data_t wf_recv_buffer[DAC_SAMPLES_BUF_SIZE];
 
 static void dac_gpio_task(void *arg)
 {
@@ -154,7 +154,7 @@ static void main_task(void *arg)
             if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_send", wf_send_buffer, DAC_SAMPLES_BUF_SIZE, 2, 0) > 0){
                 publish_flag += 0x01;
             }
-            if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_recv", wf_recv_buffer, DAC_SAMPLES_BUF_SIZE, 2, 0) > 0){
+            if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_recv", (dac_data_t*) wf_recv_buffer, DAC_SAMPLES_BUF_SIZE, 2, 0) > 0){
                 publish_flag += 0x02;
             }
             // Certificar que valores foram publicados antes de alterar o estado
@@ -185,6 +185,16 @@ void generate_signal_task(void *arg)
     }
 }
 
+void get_signal_task(void *arg)
+{
+    while(1)
+    {
+        // TODO: SUSPENDER ESTA TASK E APENAS ACORDAR QUANDO MAIN TASK MANDAR
+        obtain_wave(wf_recv_buffer);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+}
+
 void app_main(void)
 {
     //config_timer(TIMER_0, WITH_RELOAD);
@@ -196,7 +206,7 @@ void app_main(void)
 //    config_i2s_adc();
 
     for (uint16_t i=0; i<DAC_SAMPLES_BUF_SIZE; i++){
-        wf_recv_buffer[i] = i%255;
+        wf_recv_buffer[i].dac_sample = i%255;
         wf_send_buffer[DAC_SAMPLES_BUF_SIZE - i] = i%255;
     }
 
@@ -213,7 +223,8 @@ void app_main(void)
 
     //Create and start stats task
 //    xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, dac_task_handler, 0);
-    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, gen_signal_handler, 1);
+//    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, gen_signal_handler, 1);
+    xTaskCreatePinnedToCore(get_signal_task, "get_signal", 8192, NULL, 3, get_signal_task_handler, 0);
 //    xTaskCreatePinnedToCore(i2c_adc_task, "adc_i2c", 4096, NULL, 1, i2c_adc_task_handler, 0);
 //    xTaskCreatePinnedToCore(water_mark_stack_task, "stack_wm", 4096, NULL, 0, watermark_task_handler, 0);
 //    xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, main_task_handler, 1);
