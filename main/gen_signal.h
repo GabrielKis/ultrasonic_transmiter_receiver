@@ -86,9 +86,6 @@ typedef union
     } register_32_bits;
 }register_32_t;
 
-TaskHandle_t gen_signal_handler;
-TaskHandle_t get_signal_task_handler;
-
 void config_gpio(void);
 void generate_wave(uint8_t * data_buffer);
 void obtain_wave(dac_data_t * recv_buffer);

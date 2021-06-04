@@ -16,6 +16,8 @@
 TaskHandle_t dac_task_handler;
 TaskHandle_t watermark_task_handler;
 TaskHandle_t main_task_handler;
+TaskHandle_t gen_signal_handler;
+TaskHandle_t get_signal_task_handler;
 
 char wf_send_buffer[DAC_SAMPLES_BUF_SIZE];
 dac_data_t wf_recv_buffer[DAC_SAMPLES_BUF_SIZE];
@@ -88,8 +90,8 @@ static void water_mark_stack_task(void *arg)
 {
     while (1) {
         printf("------WATERMARKS-------\n");
-        printf("dac_task_watermark: %d\n", uxTaskGetStackHighWaterMark(dac_task_handler));
-        printf("stack_task_watermark: %d\n", uxTaskGetStackHighWaterMark(NULL));
+        printf("GET_SIGNAL_WM: %d\n", uxTaskGetStackHighWaterMark(get_signal_task_handler));
+        printf("GEN_SIGNAL_WM: %d\n", uxTaskGetStackHighWaterMark(gen_signal_handler));
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -101,6 +103,8 @@ static void main_task(void *arg)
     const TickType_t xTicksToWait = 100 / portTICK_PERIOD_MS;
 
     uint8_t publish_flag = 0;
+    uint8_t task_control = 0x00;
+    uint32_t signals_tasks_notify_ret = 0;
 
     while (1) {
 
@@ -132,21 +136,33 @@ static void main_task(void *arg)
             // espera os dados do receptor
             printf("state_ctrl: %d\n", state_ctrl);
             if (get_recv_flag()){
-                for(uint8_t i=0; i<DATA_RECV_MQTT_PAYLOAD_SIZE; i++)
-                    printf("%c", data_received_mqtt[i]);
-                printf("\n");
+                printf("frame recebido\n");
+                //for(uint8_t i=0; i<DATA_RECV_MQTT_PAYLOAD_SIZE; i++)
+                //    printf("%c", data_received_mqtt[i]);
+                //printf("\n");
                 // interpretar frame recebido
                 // qtd_periods
                 // period values
-                state_ctrl = 3;
                 write_recv_flag(0);
+                state_ctrl = 3;
             }
         }else if (state_ctrl == 3){
             printf("state_ctrl: %d\n", state_ctrl);
-            printf("CHAMA TASK PARA ENVIO DOS DADOS\n");
-            generate_wave(data_received_mqtt);
-            state_ctrl = 4;
-            // vai para task de envio dos dados
+            if (task_control == 0x00){
+                printf("CHAMA TASK PARA ENVIO DOS DADOS\n");
+                xTaskNotifyGive(gen_signal_handler);
+                xTaskNotifyGive(get_signal_task_handler);
+                task_control = 1;
+            }
+            if (task_control == 1){
+                signals_tasks_notify_ret += ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+                printf("RECEBEU RETORNO DA TASK DE SINAL: %d\n", signals_tasks_notify_ret);
+                if (signals_tasks_notify_ret == 2){
+                    state_ctrl = 4;
+                    task_control = 0x00;
+                    signals_tasks_notify_ret = 0;
+                }
+            }
         }else if (state_ctrl == 4){
             printf("state_ctrl: %d\n", state_ctrl);
             // Publica valores dos dados enviados
@@ -177,21 +193,33 @@ static void main_task(void *arg)
 
 void generate_signal_task(void *arg)
 {
+    uint32_t notify_ret = 0x00000000;
     while(1)
     {
         // TODO: SUSPENDER ESTA TASK E APENAS ACORDAR QUANDO MAIN TASK MANDAR
-        generate_wave(data_received_mqtt);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        notify_ret = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        printf("Notify Taken from GEN TASK: %.08x\n", notify_ret);
+        if (notify_ret){
+            //generate_wave(data_received_mqtt);
+            xTaskNotifyGive(main_task_handler);
+        }
+        //vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
 
 void get_signal_task(void *arg)
 {
+    uint32_t notify_ret = 0x00000000;
     while(1)
     {
         // TODO: SUSPENDER ESTA TASK E APENAS ACORDAR QUANDO MAIN TASK MANDAR
-        obtain_wave(wf_recv_buffer);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        notify_ret = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        printf("Notify Taken from GET TASK: %.08x\n", notify_ret);
+        if (notify_ret){
+            //obtain_wave(wf_recv_buffer);
+            xTaskNotifyGive(main_task_handler);
+        }
+        //vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -222,10 +250,10 @@ void app_main(void)
     esp_mqtt_client = mqtt_init();
 
     //Create and start stats task
+    xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, &main_task_handler, 1);
+    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, &gen_signal_handler, 0);
+    xTaskCreatePinnedToCore(get_signal_task, "get_signal", 8192, NULL, 3, &get_signal_task_handler, 1);
 //    xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, dac_task_handler, 0);
-//    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, gen_signal_handler, 1);
-    xTaskCreatePinnedToCore(get_signal_task, "get_signal", 8192, NULL, 3, get_signal_task_handler, 0);
 //    xTaskCreatePinnedToCore(i2c_adc_task, "adc_i2c", 4096, NULL, 1, i2c_adc_task_handler, 0);
-//    xTaskCreatePinnedToCore(water_mark_stack_task, "stack_wm", 4096, NULL, 0, watermark_task_handler, 0);
-//    xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, main_task_handler, 1);
+//    xTaskCreatePinnedToCore(water_mark_stack_task, "stack_wm", 4096, NULL, 4, watermark_task_handler, 0);
 }
