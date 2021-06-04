@@ -16,6 +16,10 @@
 // Output bits from register
 #define DAC_OUTPUT_REG_MASK     0x00ec002a
 
+// Input bits from GPIO registers
+#define ADC_INPUT_REG0_MASK     0x06000000
+#define ADC_INPUT_REG1_MASK     0x0000009f
+
 static const uint8_t lookup_sine_table[SAMPLES_PER_PERIOD+1] = {
     0x80,0x9f,0xbd,0xd7,0xeb,0xf9,0xff,0xfd,
     0xf3,0xe2,0xca,0xae,0x8f,0x70,0x51,0x35,
@@ -39,12 +43,54 @@ typedef union
     } dac_sample_bits;
 }dac_data_t;
 
+typedef union
+{
+    uint32_t register_32;
+    struct
+    {
+        uint32_t bit0 : 1;
+        uint32_t bit1 : 1;
+        uint32_t bit2 : 1;
+        uint32_t bit3 : 1;
+        uint32_t bit4 : 1;
+        uint32_t bit5 : 1;
+        uint32_t bit6 : 1;
+        uint32_t bit7 : 1;
 
+        uint32_t bit8 : 1;
+        uint32_t bit9 : 1;
+        uint32_t bit10 : 1;
+        uint32_t bit11 : 1;
+        uint32_t bit12 : 1;
+        uint32_t bit13 : 1;
+        uint32_t bit14 : 1;
+        uint32_t bit15 : 1;
+
+        uint32_t bit16 : 1;
+        uint32_t bit17 : 1;
+        uint32_t bit18 : 1;
+        uint32_t bit19 : 1;
+        uint32_t bit20 : 1;
+        uint32_t bit21 : 1;
+        uint32_t bit22 : 1;
+        uint32_t bit23 : 1;
+
+        uint32_t bit24 : 1;
+        uint32_t bit25 : 1;
+        uint32_t bit26 : 1;
+        uint32_t bit27 : 1;
+        uint32_t bit28 : 1;
+        uint32_t bit29 : 1;
+        uint32_t bit30 : 1;
+        uint32_t bit31 : 1;
+    } register_32_bits;
+}register_32_t;
 
 TaskHandle_t gen_signal_handler;
+TaskHandle_t get_signal_task_handler;
 
 void config_gpio(void);
 void generate_wave(uint8_t * data_buffer);
-void generate_signal_task(void *arg);
+void obtain_wave(dac_data_t * recv_buffer);
 
 #endif
