@@ -6,14 +6,14 @@
 #include "freertos/event_groups.h"
 
 #include "mqtt_client.h"
-
+#include "gen_signal.h"
 
 #define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
 #define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
 #define EXAMPLE_ESP_WIFI_CHANNEL   1
 #define EXAMPLE_MAX_STA_CONN       1
 
-#define DATA_RECV_MQTT_PAYLOAD_SIZE 2 + (125)
+#define DATA_RECV_MQTT_PAYLOAD_SIZE 2 + (SAMPLES_PER_PERIOD)
 
 EventGroupHandle_t wifi_event_group;
 esp_mqtt_client_handle_t esp_mqtt_client;
