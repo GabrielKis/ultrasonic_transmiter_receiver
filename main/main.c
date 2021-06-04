@@ -177,20 +177,13 @@ static void main_task(void *arg)
 
 void generate_signal_task(void *arg)
 {
-    uint8_t period_signal_buffer[SAMPLES_PER_PERIOD];
-    uint8_t buffer_index;
-    buffer_index = 0;
-
-    uint64_t init_time = 0;
-    uint64_t final_time = 0;
-
     while(1)
     {
+        // TODO: SUSPENDER ESTA TASK E APENAS ACORDAR QUANDO MAIN TASK MANDAR
         generate_wave(data_received_mqtt);
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
-
 
 void app_main(void)
 {
