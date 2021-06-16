@@ -24,65 +24,35 @@ dac_data_t wf_recv_buffer[DAC_SAMPLES_BUF_SIZE];
 
 static void dac_gpio_task(void *arg)
 {
-    uint32_t bit32_register = 0x00000000;
+    int value;
     esp_err_t err;
-    double init_time, final_time;
-    double * time_ptr;
+        err = gpio_set_level(GPIO_OUTPUT_DAC_0, 1);
+        err = gpio_set_level(GPIO_OUTPUT_DAC_1, 1);
+        err = gpio_set_level(GPIO_OUTPUT_DAC_2, 1);
+        err = gpio_set_level(GPIO_OUTPUT_DAC_3, 1);
+        err = gpio_set_level(GPIO_OUTPUT_DAC_4, 1);
+        err = gpio_set_level(GPIO_OUTPUT_DAC_5, 1);
+        err = gpio_set_level(GPIO_OUTPUT_DAC_6, 1);
+        err = gpio_set_level(GPIO_OUTPUT_DAC_7, 1);
     while (1) {
-        // Verificação da taxa do DAC
-        time_ptr = &init_time;
-        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        for (int i=0; i<1000; i++){
-            dac_output_voltage(DAC_CHANNEL_1, 200);
-        }
-        time_ptr = &final_time;
-        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        printf("DAC 1000 reads: %lf ms\n", (final_time - init_time)*1000);
-
-        // Verificação de taxa da GPIO
-        time_ptr = &init_time;
-        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        for (int i=0; i<1000; i++){
-            err = gpio_set_level(GPIO_NUM_0, 1);
-        }
-        time_ptr = &final_time;
-        ESP_ERROR_CHECK(err);
-        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        printf("GPIO 1000 reads: %lf ms\n", (final_time - init_time)*1000);
-
-        // Verificação de taxa da GPIO
-        time_ptr = &init_time;
-        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        for (int i=0; i<1000; i++){
-            gpio_get_level(GPIO_NUM_0);
-        }
-        time_ptr = &final_time;
-        ESP_ERROR_CHECK(err);
-        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        printf("GPIO 1000 writes: %lf ms\n", (final_time - init_time)*1000);
-        uint8_t prov_gpio_data = 0b00000010;
-        // Verificação de taxa da GPIO
-        time_ptr = &init_time;
-        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        for (int i=0; i<1000; i++){
-            bit32_register = ((prov_gpio_data & 0b00000001) * BIT23 + \
-                                ((prov_gpio_data & 0b00000010) >> 1) * BIT22 + \
-                                ((prov_gpio_data & 0b00000100) >> 2) * BIT1 + \
-                                ((prov_gpio_data & 0b00001000) >> 3) * BIT3 + \
-                                ((prov_gpio_data & 0b00010000) >> 4) * BIT21 + \
-                                ((prov_gpio_data & 0b00100000) >> 5) * BIT19 + \
-                                ((prov_gpio_data & 0b01000000) >> 6) * BIT18 + \
-                                ((prov_gpio_data & 0b10000000) >> 7) * BIT5);
-            REG_WRITE(GPIO_OUT_W1TC_REG, BIT2);
-        }
-        time_ptr = &final_time;
-        ESP_ERROR_CHECK(err);
-        timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, (double *)time_ptr);
-        printf("GPIO 1000 REGISTER SETS: %lf ms\n", (final_time - init_time)*1000);
-        printf("REG BUILT: 0x%.8x \n", bit32_register);
-        printf("BIT23: 0x%.8x \n\n", BIT23);
-
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_0, 1);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_1, 1);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_2, 1);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_3, 1);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_4, 1);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_5, 1);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_6, 1);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_7, 1);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_0, 0);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_1, 0);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_2, 0);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_3, 0);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_4, 0);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_5, 0);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_6, 0);
+//        err = gpio_set_level(GPIO_OUTPUT_DAC_7, 0);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -226,8 +196,8 @@ void get_signal_task(void *arg)
 void app_main(void)
 {
     //config_timer(TIMER_0, WITH_RELOAD);
-    config_timer(0, 1);
-    config_test_timer(1);
+//    config_timer(0, 1);
+//    config_test_timer(1);
     config_gpio();
     // PINO 25 - dac
 //    dac_output_enable(DAC_CHANNEL_1);
@@ -250,10 +220,10 @@ void app_main(void)
     esp_mqtt_client = mqtt_init();
 
     //Create and start stats task
-    xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, &main_task_handler, 1);
-    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, &gen_signal_handler, 0);
-    xTaskCreatePinnedToCore(get_signal_task, "get_signal", 8192, NULL, 3, &get_signal_task_handler, 1);
-//    xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, dac_task_handler, 0);
+//    xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, &main_task_handler, 1);
+//    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, &gen_signal_handler, 0);
+//    xTaskCreatePinnedToCore(get_signal_task, "get_signal", 8192, NULL, 3, &get_signal_task_handler, 1);
+    xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, &dac_task_handler, 0);
 //    xTaskCreatePinnedToCore(i2c_adc_task, "adc_i2c", 4096, NULL, 1, i2c_adc_task_handler, 0);
 //    xTaskCreatePinnedToCore(water_mark_stack_task, "stack_wm", 4096, NULL, 4, watermark_task_handler, 0);
 }
