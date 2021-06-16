@@ -19,20 +19,23 @@ void config_gpio(void)
     gpio_config_t config_gpio_output = {
         .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,
         .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = GPIO_PULLDOWN_DISABLE,
-        .pull_down_en = GPIO_PULLUP_DISABLE,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE
     };
     gpio_config(&config_gpio_output);
 
-    gpio_config_t config_gpio_input = {
-        .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,
-        .mode = GPIO_MODE_INPUT,
-        .pull_up_en = GPIO_PULLDOWN_DISABLE,
-        .pull_down_en = GPIO_PULLUP_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE
-    };
-    gpio_config(&config_gpio_input);
+//    gpio_config_t config_gpio_input = {
+//        .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,
+//        .mode = GPIO_MODE_INPUT,
+//        .pull_up_en = GPIO_PULLDOWN_DISABLE,
+//        .pull_down_en = GPIO_PULLUP_DISABLE,
+//        .intr_type = GPIO_INTR_DISABLE
+//    };
+    //gpio_config(&config_gpio_input);
+
+    //REG_WRITE(GPIO_OUT_W1TS_REG, DAC_OUTPUT_REG_MASK);
+
 }
 
 /**
