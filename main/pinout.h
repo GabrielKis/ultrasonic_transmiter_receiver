@@ -3,18 +3,18 @@
 
 #include "driver/gpio.h"
 
-#define GPIO_OUTPUT_DAC_0    23
-#define GPIO_OUTPUT_DAC_1    22
-//TODO: ALTERAR PARA PINO1 (PERDE O DEBUG)
-#define GPIO_OUTPUT_DAC_2    3
-#define GPIO_OUTPUT_DAC_3    3
-#define GPIO_OUTPUT_DAC_4    21
+#define GPIO_OUTPUT_DAC_7    23
+#define GPIO_OUTPUT_DAC_6    22
 #define GPIO_OUTPUT_DAC_5    19
-#define GPIO_OUTPUT_DAC_6    18
-#define GPIO_OUTPUT_DAC_7    5
+#define GPIO_OUTPUT_DAC_4    2
+#define GPIO_OUTPUT_DAC_3    21
+#define GPIO_OUTPUT_DAC_2    3
+#define GPIO_OUTPUT_DAC_1    16
+#define GPIO_OUTPUT_DAC_0    4
+
 #define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_DAC_0) | (1ULL<<GPIO_OUTPUT_DAC_1) \
                             | (1ULL<<GPIO_OUTPUT_DAC_2) | (1ULL<<GPIO_OUTPUT_DAC_3) \
-                            | (1ULL<<GPIO_OUTPUT_DAC_4) | (1ULL<<GPIO_OUTPUT_DAC_6) \
+                            | (1ULL<<GPIO_OUTPUT_DAC_4) | (1ULL<<GPIO_OUTPUT_DAC_5) \
                             | (1ULL<<GPIO_OUTPUT_DAC_6) | (1ULL<<GPIO_OUTPUT_DAC_7))
 
 // GPIO Signal output pins
@@ -31,5 +31,7 @@
                             | (1ULL<<ADC_GPIO_INPUT_D4) | (1ULL<<ADC_GPIO_INPUT_D5) \
                             | (1ULL<<ADC_GPIO_INPUT_D6) | (1ULL<<ADC_GPIO_INPUT_D7))
 
+#define ADC_EO_GPIO         13
+#define ADC_CLOCK_SIG       27
 
 #endif
