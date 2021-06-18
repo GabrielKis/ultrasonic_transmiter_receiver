@@ -188,11 +188,12 @@ void get_signal_task(void *arg)
 
 void app_main(void)
 {
+    esp_err_t err;
     config_timer(TIMER_0, WITH_RELOAD);
-    //config_timer(0, 1);
     config_test_timer(1);
     config_gpio();
-    // PINO 25 - dac
+    err = gpio_set_level(ADC_EO_GPIO, 1);
+
 //    dac_output_enable(DAC_CHANNEL_1);
 //    config_i2s_adc();
 

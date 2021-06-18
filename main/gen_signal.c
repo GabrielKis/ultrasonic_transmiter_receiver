@@ -19,6 +19,7 @@
  */
 void config_gpio(void)
 {
+    // Configuracao dos pinos de saida do DAC
     gpio_config_t config_gpio_output = {
         .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,
         .mode = GPIO_MODE_OUTPUT,
@@ -28,29 +29,23 @@ void config_gpio(void)
     };
     gpio_config(&config_gpio_output);
 
-//    gpio_config_t config_gpio_input = {
-//        .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,
-//        .mode = GPIO_MODE_INPUT,
-//        .pull_up_en = GPIO_PULLDOWN_DISABLE,
-//        .pull_down_en = GPIO_PULLUP_ENABLE,
-//        .intr_type = GPIO_INTR_DISABLE
-//    };
-//    gpio_config(&config_gpio_input);
-
-    //REG_WRITE(GPIO_OUT_W1TS_REG, DAC_OUTPUT_REG_MASK);
+    // Configuracao dos pinos de entrada do ADC
+    gpio_config_t config_gpio_input = {
+        .pin_bit_mask = GPIO_INPUT_GPIO_PIN_SEL,
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLDOWN_DISABLE,
+        .pull_down_en = GPIO_PULLUP_ENABLE,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    gpio_config(&config_gpio_input);
 
     // PINO DE CLOCK PARA ADC
-    // Set up timer
     ledc_timer_config_t ledc_timer = {
-        // We need clock, not PWM so 1 bit is enough.
         .duty_resolution = LEDC_TIMER_1_BIT,
-
-        // Clock frequency, 1 MHz, high speed
         .freq_hz = 4000000,
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .timer_num = LEDC_TIMER_0,
         //.clk_cfg = LEDC_AUTO_CLK,
-        // I think not needed for new esp-idf software, try uncommenting
         .clk_cfg = LEDC_USE_APB_CLK
     };
 
@@ -66,6 +61,7 @@ void config_gpio(void)
     };
 
     ledc_channel_config(&channel_config);
+
 /*
 */
 }
