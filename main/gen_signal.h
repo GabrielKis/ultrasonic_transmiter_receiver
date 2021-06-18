@@ -9,12 +9,12 @@
 
 #define SIGNAL_FREQ             40 * 1000                       // output signal 40kHz
 #define SAMPLE_RATE             2 * 1000 * 1000                 // Sample rate 4MSpS
-#define SAMPLES_PER_PERIOD      (SAMPLE_RATE) / (SIGNAL_FREQ)
+#define SAMPLES_PER_PERIOD      50
 
-#define DAC_SAMPLES_BUF_SIZE    30000
+#define DAC_SAMPLES_BUF_SIZE    10000
 
 // Output bits from register
-#define DAC_OUTPUT_REG_MASK     0x00ec002a
+#define DAC_OUTPUT_REG_MASK     0x00e9001c
 
 // Input bits from GPIO registers
 #define ADC_INPUT_REG0_MASK     0x06000000

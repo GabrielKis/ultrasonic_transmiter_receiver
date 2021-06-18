@@ -8,6 +8,9 @@
 #include "gen_signal.h"
 #include "config_timers.h"
 
+#include "driver/ledc.h"
+#include "driver/periph_ctrl.h"
+
 /**
  * @brief Config Signal output GPIOs
  *
@@ -29,13 +32,42 @@ void config_gpio(void)
 //        .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,
 //        .mode = GPIO_MODE_INPUT,
 //        .pull_up_en = GPIO_PULLDOWN_DISABLE,
-//        .pull_down_en = GPIO_PULLUP_DISABLE,
+//        .pull_down_en = GPIO_PULLUP_ENABLE,
 //        .intr_type = GPIO_INTR_DISABLE
 //    };
-    //gpio_config(&config_gpio_input);
+//    gpio_config(&config_gpio_input);
 
     //REG_WRITE(GPIO_OUT_W1TS_REG, DAC_OUTPUT_REG_MASK);
 
+    // PINO DE CLOCK PARA ADC
+    // Set up timer
+    ledc_timer_config_t ledc_timer = {
+        // We need clock, not PWM so 1 bit is enough.
+        .duty_resolution = LEDC_TIMER_1_BIT,
+
+        // Clock frequency, 1 MHz, high speed
+        .freq_hz = 4000000,
+        .speed_mode = LEDC_HIGH_SPEED_MODE,
+        .timer_num = LEDC_TIMER_0,
+        //.clk_cfg = LEDC_AUTO_CLK,
+        // I think not needed for new esp-idf software, try uncommenting
+        .clk_cfg = LEDC_USE_APB_CLK
+    };
+
+    ledc_timer_config(&ledc_timer);
+
+    // Set up GPIO PIN
+    ledc_channel_config_t channel_config = {
+        .channel    = LEDC_CHANNEL_0,
+        .duty       = 1,
+        .gpio_num   = ADC_CLOCK_SIG,
+        .speed_mode = LEDC_HIGH_SPEED_MODE,
+        .timer_sel  = LEDC_TIMER_0
+    };
+
+    ledc_channel_config(&channel_config);
+/*
+*/
 }
 
 /**
@@ -65,6 +97,12 @@ void generate_wave(uint8_t * data_buffer)
 
     uint32_t bit32_register;
 
+    printf("Waveform Buffer:\n");
+    for (uint index_buf = 0; index_buf<SAMPLES_PER_PERIOD; index_buf++){
+        printf("%x ", waveform_buffer[index_buf].dac_sample);
+    }
+    printf("\n");
+
     //  USADO PARA VERIFICAR O TEMPO DE ESCRITA
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
     time_ptr = &init_time;
@@ -75,17 +113,19 @@ void generate_wave(uint8_t * data_buffer)
     for(uint32_t i=0; i<SAMPLES_PER_PERIOD * qtd_periods; i++){
         bit32_register = 0x00000000;
         sample_value.dac_sample = waveform_buffer[i%SAMPLES_PER_PERIOD].dac_sample;
-        bit32_register = ((sample_value.dac_sample_bits.bit0 << 23) + \
-                            (sample_value.dac_sample_bits.bit1 << 22)+ \
-                            (sample_value.dac_sample_bits.bit2 << 1) + \
-                            (sample_value.dac_sample_bits.bit3 << 3) + \
-                            (sample_value.dac_sample_bits.bit4 << 21) + \
-                            (sample_value.dac_sample_bits.bit5 << 19) + \
-                            (sample_value.dac_sample_bits.bit6 << 18) + \
-                            (sample_value.dac_sample_bits.bit7 << 5));
+        bit32_register = ((sample_value.dac_sample_bits.bit0 << GPIO_OUTPUT_DAC_0) + \
+                            (sample_value.dac_sample_bits.bit1 << GPIO_OUTPUT_DAC_1)+ \
+                            (sample_value.dac_sample_bits.bit2 << GPIO_OUTPUT_DAC_2) + \
+                            (sample_value.dac_sample_bits.bit3 << GPIO_OUTPUT_DAC_3) + \
+                            (sample_value.dac_sample_bits.bit4 << GPIO_OUTPUT_DAC_4) + \
+                            (sample_value.dac_sample_bits.bit5 << GPIO_OUTPUT_DAC_5) + \
+                            (sample_value.dac_sample_bits.bit6 << GPIO_OUTPUT_DAC_6) + \
+                            (sample_value.dac_sample_bits.bit7 << GPIO_OUTPUT_DAC_7));
+//        printf("%d - bit register: %.08x - %.02x \n", (i%SAMPLES_PER_PERIOD), bit32_register, sample_value.dac_sample);
         REG_WRITE(GPIO_OUT_W1TS_REG, (DAC_OUTPUT_REG_MASK & bit32_register));
         REG_WRITE(GPIO_OUT_W1TC_REG, (DAC_OUTPUT_REG_MASK & ~(bit32_register)));
-        //read_register = REG_READ(GPIO_IN_REG);
+        // Instrução para garantir 40kHz de frequencia
+        __asm__ __volatile__("nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;");
     }
     // apos escrever todos os valores de forma de onda, zerar o registrador de saida
     REG_WRITE(GPIO_OUT_W1TC_REG, DAC_OUTPUT_REG_MASK);

@@ -35,24 +35,14 @@ static void dac_gpio_task(void *arg)
         err = gpio_set_level(GPIO_OUTPUT_DAC_6, 1);
         err = gpio_set_level(GPIO_OUTPUT_DAC_7, 1);
     while (1) {
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_0, 1);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_1, 1);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_2, 1);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_3, 1);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_4, 1);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_5, 1);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_6, 1);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_7, 1);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_0, 0);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_1, 0);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_2, 0);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_3, 0);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_4, 0);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_5, 0);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_6, 0);
-//        err = gpio_set_level(GPIO_OUTPUT_DAC_7, 0);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        printf("task teste DAC\n");
+        for (uint8_t i=0; i<0xff; i++){
+            //err = gpio_set_level(GPIO_OUTPUT_DAC_7, 1);
+            //err = gpio_set_level(GPIO_OUTPUT_DAC_7, 0);
+            REG_WRITE(GPIO_OUT_W1TS_REG, DAC_OUTPUT_REG_MASK);
+            REG_WRITE(GPIO_OUT_W1TC_REG, DAC_OUTPUT_REG_MASK);
+        }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -164,16 +154,19 @@ static void main_task(void *arg)
 void generate_signal_task(void *arg)
 {
     uint32_t notify_ret = 0x00000000;
+    esp_err_t err;
     while(1)
     {
         // TODO: SUSPENDER ESTA TASK E APENAS ACORDAR QUANDO MAIN TASK MANDAR
         notify_ret = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         printf("Notify Taken from GEN TASK: %.08x\n", notify_ret);
         if (notify_ret){
-            //generate_wave(data_received_mqtt);
+            generate_wave(data_received_mqtt);
+            //err = gpio_set_level(GPIO_OUTPUT_DAC_7, 1);
             xTaskNotifyGive(main_task_handler);
+            //xTaskNotifyGive(gen_signal_handler);
         }
-        //vTaskDelay(2000 / portTICK_PERIOD_MS);
+        //vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -195,9 +188,9 @@ void get_signal_task(void *arg)
 
 void app_main(void)
 {
-    //config_timer(TIMER_0, WITH_RELOAD);
-//    config_timer(0, 1);
-//    config_test_timer(1);
+    config_timer(TIMER_0, WITH_RELOAD);
+    //config_timer(0, 1);
+    config_test_timer(1);
     config_gpio();
     // PINO 25 - dac
 //    dac_output_enable(DAC_CHANNEL_1);
@@ -220,10 +213,10 @@ void app_main(void)
     esp_mqtt_client = mqtt_init();
 
     //Create and start stats task
-//    xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, &main_task_handler, 1);
-//    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, &gen_signal_handler, 0);
-//    xTaskCreatePinnedToCore(get_signal_task, "get_signal", 8192, NULL, 3, &get_signal_task_handler, 1);
-    xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, &dac_task_handler, 0);
+    xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, &main_task_handler, 1);
+    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, &gen_signal_handler, 0);
+    xTaskCreatePinnedToCore(get_signal_task, "get_signal", 8192, NULL, 3, &get_signal_task_handler, 1);
+//    xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, &dac_task_handler, 0);
 //    xTaskCreatePinnedToCore(i2c_adc_task, "adc_i2c", 4096, NULL, 1, i2c_adc_task_handler, 0);
 //    xTaskCreatePinnedToCore(water_mark_stack_task, "stack_wm", 4096, NULL, 4, watermark_task_handler, 0);
 }
