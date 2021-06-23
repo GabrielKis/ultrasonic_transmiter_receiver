@@ -161,6 +161,7 @@ void obtain_wave(dac_data_t * recv_buffer)
         read_register_1.register_32 = REG_READ(GPIO_IN_REG);
         read_register_2.register_32 = REG_READ(GPIO_IN1_REG);
         /*
+        */
         sample_value.dac_sample = ((read_register_2.register_32_bits.bit4 << 0) + \
                                     (read_register_2.register_32_bits.bit7 << 1) + \
                                     (read_register_2.register_32_bits.bit2 << 2) + \
@@ -170,7 +171,6 @@ void obtain_wave(dac_data_t * recv_buffer)
                                     (read_register_1.register_32_bits.bit25 << 6) + \
                                     (read_register_1.register_32_bits.bit26 << 7));
         recv_buffer[i].dac_sample = sample_value.dac_sample;
-        */
     }
 
     //  USADO PARA VERIFICAR O TEMPO DE ESCRITA

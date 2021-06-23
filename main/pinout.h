@@ -13,12 +13,13 @@
 #define GPIO_OUTPUT_DAC_0    4
 
 #define ADC_EO_GPIO         13
+#define ADC_EO_GPIO2        12
 
 #define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_DAC_0) | (1ULL<<GPIO_OUTPUT_DAC_1) \
                             | (1ULL<<GPIO_OUTPUT_DAC_2) | (1ULL<<GPIO_OUTPUT_DAC_3) \
                             | (1ULL<<GPIO_OUTPUT_DAC_4) | (1ULL<<GPIO_OUTPUT_DAC_5) \
                             | (1ULL<<GPIO_OUTPUT_DAC_6) | (1ULL<<GPIO_OUTPUT_DAC_7) \
-                            | (1ULL<<ADC_EO_GPIO))
+                            | (1ULL<<ADC_EO_GPIO) | (1ULL<<ADC_EO_GPIO2))
 
 // GPIO Signal output pins
 #define ADC_GPIO_INPUT_D0   36

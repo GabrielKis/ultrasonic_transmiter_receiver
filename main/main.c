@@ -21,28 +21,50 @@ TaskHandle_t get_signal_task_handler;
 
 char wf_send_buffer[DAC_SAMPLES_BUF_SIZE];
 dac_data_t wf_recv_buffer[DAC_SAMPLES_BUF_SIZE];
+char adc_prov_data[1];
 
-static void dac_gpio_task(void *arg)
-{
-    int value;
-    esp_err_t err;
-        err = gpio_set_level(GPIO_OUTPUT_DAC_0, 1);
-        err = gpio_set_level(GPIO_OUTPUT_DAC_1, 1);
-        err = gpio_set_level(GPIO_OUTPUT_DAC_2, 1);
-        err = gpio_set_level(GPIO_OUTPUT_DAC_3, 1);
-        err = gpio_set_level(GPIO_OUTPUT_DAC_4, 1);
-        err = gpio_set_level(GPIO_OUTPUT_DAC_5, 1);
-        err = gpio_set_level(GPIO_OUTPUT_DAC_6, 1);
-        err = gpio_set_level(GPIO_OUTPUT_DAC_7, 1);
-    while (1) {
-        printf("task teste DAC\n");
-        for (uint8_t i=0; i<0xff; i++){
-            //err = gpio_set_level(GPIO_OUTPUT_DAC_7, 1);
-            //err = gpio_set_level(GPIO_OUTPUT_DAC_7, 0);
-            REG_WRITE(GPIO_OUT_W1TS_REG, DAC_OUTPUT_REG_MASK);
-            REG_WRITE(GPIO_OUT_W1TC_REG, DAC_OUTPUT_REG_MASK);
-        }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+uint8_t get_adc_data(){
+    uint8_t adc_value = 0;
+    adc_value += gpio_get_level(ADC_GPIO_INPUT_D0);
+    adc_value += gpio_get_level(ADC_GPIO_INPUT_D1) << 1;
+    adc_value += gpio_get_level(ADC_GPIO_INPUT_D2) << 2;
+    adc_value += gpio_get_level(ADC_GPIO_INPUT_D3) << 3;
+    adc_value += gpio_get_level(ADC_GPIO_INPUT_D4) << 4;
+    adc_value += gpio_get_level(ADC_GPIO_INPUT_D5) << 5;
+    adc_value += gpio_get_level(ADC_GPIO_INPUT_D6) << 6;
+    adc_value += gpio_get_level(ADC_GPIO_INPUT_D7) << 7;
+    printf("adc_value: %.02x\n", adc_value);
+
+    printf("%d", gpio_get_level(ADC_GPIO_INPUT_D7));
+    printf("%d", gpio_get_level(ADC_GPIO_INPUT_D6));
+    printf("%d", gpio_get_level(ADC_GPIO_INPUT_D5));
+    printf("%d", gpio_get_level(ADC_GPIO_INPUT_D4));
+    printf("%d", gpio_get_level(ADC_GPIO_INPUT_D3));
+    printf("%d", gpio_get_level(ADC_GPIO_INPUT_D2));
+    printf("%d", gpio_get_level(ADC_GPIO_INPUT_D1));
+    printf("%d\n", gpio_get_level(ADC_GPIO_INPUT_D0));
+
+    /*
+    read_register_1.register_32 = REG_READ(GPIO_IN_REG);
+    read_register_2.register_32 = REG_READ(GPIO_IN1_REG);
+    sample_value.dac_sample = ((read_register_2.register_32_bits.bit4 << 0) + \
+                                (read_register_2.register_32_bits.bit7 << 1) + \
+                                (read_register_2.register_32_bits.bit2 << 2) + \
+                                (read_register_2.register_32_bits.bit3 << 3) + \
+                                (read_register_2.register_32_bits.bit0 << 4) + \
+                                (read_register_2.register_32_bits.bit1 << 5) + \
+                                (read_register_1.register_32_bits.bit25 << 6) + \
+                                (read_register_1.register_32_bits.bit26 << 7));
+    recv_buffer[i].dac_sample = sample_value.dac_sample;
+    */
+    return adc_value;
+}
+
+static void dac_gpio_task(void *arg){
+    uint8_t pp;
+    while(1){
+        pp =  get_adc_data();
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -127,10 +149,14 @@ static void main_task(void *arg)
             printf("state_ctrl: %d\n", state_ctrl);
             // Publica valores dos dados enviados
             printf("PUBLICA OS VALORES PARA O PYTHON\n");
+            adc_prov_data[0] = get_adc_data();
             if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_send", wf_send_buffer, DAC_SAMPLES_BUF_SIZE, 2, 0) > 0){
+            // AMOSTRAR VALOR UNITARIO DO ADC
+            //if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_send", adc_prov_data, sizeof(uint8_t), 2, 0) > 0){
                 publish_flag += 0x01;
             }
             if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_recv", (dac_data_t*) wf_recv_buffer, DAC_SAMPLES_BUF_SIZE, 2, 0) > 0){
+            //if (esp_mqtt_client_publish(esp_mqtt_client, "ultrasound_recv", adc_prov_data, sizeof(uint8_t), 2, 0) > 0){
                 publish_flag += 0x02;
             }
             // Certificar que valores foram publicados antes de alterar o estado
@@ -179,7 +205,7 @@ void get_signal_task(void *arg)
         notify_ret = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         printf("Notify Taken from GET TASK: %.08x\n", notify_ret);
         if (notify_ret){
-            //obtain_wave(wf_recv_buffer);
+            obtain_wave(wf_recv_buffer);
             xTaskNotifyGive(main_task_handler);
         }
         //vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -192,15 +218,25 @@ void app_main(void)
     config_timer(TIMER_0, WITH_RELOAD);
     config_test_timer(1);
     config_gpio();
-    err = gpio_set_level(ADC_EO_GPIO, 1);
+    err = gpio_set_level(ADC_EO_GPIO, 0);
+    err = gpio_set_level(ADC_EO_GPIO2, 1);
+
+//    gpio_set_level(GPIO_OUTPUT_DAC_7, 1);
+//    gpio_set_level(GPIO_OUTPUT_DAC_6, 1);
+//    gpio_set_level(GPIO_OUTPUT_DAC_5, 1);
+//    gpio_set_level(GPIO_OUTPUT_DAC_4, 1);
+//    gpio_set_level(GPIO_OUTPUT_DAC_3, 1);
+//    gpio_set_level(GPIO_OUTPUT_DAC_2, 1);
+//    gpio_set_level(GPIO_OUTPUT_DAC_1, 1);
+//    gpio_set_level(GPIO_OUTPUT_DAC_0, 1);
 
 //    dac_output_enable(DAC_CHANNEL_1);
 //    config_i2s_adc();
 
-    for (uint16_t i=0; i<DAC_SAMPLES_BUF_SIZE; i++){
-        wf_recv_buffer[i].dac_sample = i%255;
-        wf_send_buffer[DAC_SAMPLES_BUF_SIZE - i] = i%255;
-    }
+//    for (uint16_t i=0; i<DAC_SAMPLES_BUF_SIZE; i++){
+//        wf_recv_buffer[i].dac_sample = i%255;
+//        wf_send_buffer[DAC_SAMPLES_BUF_SIZE - i] = i%255;
+//    }
 
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
