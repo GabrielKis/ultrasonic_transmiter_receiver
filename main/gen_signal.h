@@ -9,7 +9,7 @@
 
 #define SIGNAL_FREQ             40 * 1000                       // output signal 40kHz
 #define SAMPLE_RATE             2 * 1000 * 1000                 // Sample rate 4MSpS
-#define SAMPLES_PER_PERIOD      50
+#define SAMPLES_PER_PERIOD      25
 
 #define DAC_SAMPLES_BUF_SIZE    10000
 
@@ -87,7 +87,7 @@ typedef union
 }register_32_t;
 
 void config_gpio(void);
-void generate_wave(uint8_t * data_buffer);
+void generate_wave(uint8_t * data_buffer, dac_data_t * recv_buffer);
 void obtain_wave(dac_data_t * recv_buffer);
 
 #endif

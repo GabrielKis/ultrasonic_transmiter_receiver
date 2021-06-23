@@ -187,7 +187,7 @@ void generate_signal_task(void *arg)
         notify_ret = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         printf("Notify Taken from GEN TASK: %.08x\n", notify_ret);
         if (notify_ret){
-            generate_wave(data_received_mqtt);
+            generate_wave(data_received_mqtt, wf_recv_buffer);
             //err = gpio_set_level(GPIO_OUTPUT_DAC_7, 1);
             xTaskNotifyGive(main_task_handler);
             //xTaskNotifyGive(gen_signal_handler);
@@ -205,7 +205,7 @@ void get_signal_task(void *arg)
         notify_ret = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         printf("Notify Taken from GET TASK: %.08x\n", notify_ret);
         if (notify_ret){
-            obtain_wave(wf_recv_buffer);
+            //obtain_wave(wf_recv_buffer);
             xTaskNotifyGive(main_task_handler);
         }
         //vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -251,8 +251,8 @@ void app_main(void)
 
     //Create and start stats task
     xTaskCreatePinnedToCore(main_task, "main", 2048, NULL, 1, &main_task_handler, 1);
-    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, &gen_signal_handler, 0);
-    xTaskCreatePinnedToCore(get_signal_task, "get_signal", 8192, NULL, 3, &get_signal_task_handler, 1);
+    xTaskCreatePinnedToCore(generate_signal_task, "gen_signal", 8192, NULL, 3, &gen_signal_handler, 1);
+    xTaskCreatePinnedToCore(get_signal_task, "get_signal", 8192, NULL, 3, &get_signal_task_handler, 0);
 //    xTaskCreatePinnedToCore(dac_gpio_task, "dac_gpio", 4096, NULL, 1, &dac_task_handler, 0);
 //    xTaskCreatePinnedToCore(i2c_adc_task, "adc_i2c", 4096, NULL, 1, i2c_adc_task_handler, 0);
 //    xTaskCreatePinnedToCore(water_mark_stack_task, "stack_wm", 4096, NULL, 4, watermark_task_handler, 0);

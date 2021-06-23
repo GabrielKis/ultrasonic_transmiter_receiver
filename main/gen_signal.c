@@ -72,18 +72,21 @@ void config_gpio(void)
  * @note Write to GPIO 8-bit data
  *
  */
-void generate_wave(uint8_t * data_buffer)
+void generate_wave(uint8_t * data_buffer, dac_data_t * recv_buffer)
 {
     uint64_t init_time, final_time;
     uint64_t * time_ptr;
 
     uint16_t qtd_periods = 0x0000;
 
+    register_32_t read_register_1;
+    register_32_t read_register_2;
+
+
     qtd_periods = (data_buffer[0] << 8) + data_buffer[1];
-    qtd_periods = 40000;
-    printf("qtd_periods: %d\n", qtd_periods);
-    printf("SAMPLE PER PERIOD: %d\n", SAMPLES_PER_PERIOD);
-    printf("SAMPLE RATE: %d kSPS\n", SAMPLE_RATE/1000);
+    //printf("qtd_periods: %d\n", qtd_periods);
+    //printf("SAMPLE PER PERIOD: %d\n", SAMPLES_PER_PERIOD);
+    //printf("SAMPLE RATE: %d kSPS\n", SAMPLE_RATE/1000);
 
     dac_data_t sample_value;
     dac_data_t waveform_buffer[SAMPLES_PER_PERIOD];
@@ -93,11 +96,11 @@ void generate_wave(uint8_t * data_buffer)
 
     uint32_t bit32_register;
 
-    printf("Waveform Buffer:\n");
+    //printf("Waveform Buffer:\n");
     for (uint index_buf = 0; index_buf<SAMPLES_PER_PERIOD; index_buf++){
-        printf("%x ", waveform_buffer[index_buf].dac_sample);
+    //    printf("%x ", waveform_buffer[index_buf].dac_sample);
     }
-    printf("\n");
+    //printf("\n");
 
     //  USADO PARA VERIFICAR O TEMPO DE ESCRITA
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
@@ -106,9 +109,13 @@ void generate_wave(uint8_t * data_buffer)
     // iniciar timer
     start_test_timer();
 
-    for(uint32_t i=0; i<SAMPLES_PER_PERIOD * qtd_periods; i++){
+    for(uint32_t i=0; i<DAC_SAMPLES_BUF_SIZE; i++){
         bit32_register = 0x00000000;
-        sample_value.dac_sample = waveform_buffer[i%SAMPLES_PER_PERIOD].dac_sample;
+        if (i > qtd_periods){
+            sample_value.dac_sample = 0;
+        }else{
+            sample_value.dac_sample = waveform_buffer[i%SAMPLES_PER_PERIOD].dac_sample;
+        }
         bit32_register = ((sample_value.dac_sample_bits.bit0 << GPIO_OUTPUT_DAC_0) + \
                             (sample_value.dac_sample_bits.bit1 << GPIO_OUTPUT_DAC_1)+ \
                             (sample_value.dac_sample_bits.bit2 << GPIO_OUTPUT_DAC_2) + \
@@ -121,7 +128,23 @@ void generate_wave(uint8_t * data_buffer)
         REG_WRITE(GPIO_OUT_W1TS_REG, (DAC_OUTPUT_REG_MASK & bit32_register));
         REG_WRITE(GPIO_OUT_W1TC_REG, (DAC_OUTPUT_REG_MASK & ~(bit32_register)));
         // Instrução para garantir 40kHz de frequencia
+        read_register_1.register_32 = REG_READ(GPIO_IN_REG);
+        read_register_2.register_32 = REG_READ(GPIO_IN1_REG);
+        /*
+        */
+        sample_value.dac_sample = ((read_register_2.register_32_bits.bit4 << 0) + \
+                                    (read_register_2.register_32_bits.bit7 << 1) + \
+                                    (read_register_2.register_32_bits.bit2 << 2) + \
+                                    (read_register_2.register_32_bits.bit3 << 3) + \
+                                    (read_register_2.register_32_bits.bit0 << 4) + \
+                                    (read_register_2.register_32_bits.bit1 << 5) + \
+                                    (read_register_1.register_32_bits.bit25 << 6) + \
+                                    (read_register_1.register_32_bits.bit26 << 7));
+        recv_buffer[i].dac_sample = sample_value.dac_sample;
+        // Sincronismo para Sinal possuir 40kHz
         __asm__ __volatile__("nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;");
+        __asm__ __volatile__("nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;");
+        //__asm__ __volatile__("nop;nop;nop;nop;nop;nop;nop;nop;nop;");
     }
     // apos escrever todos os valores de forma de onda, zerar o registrador de saida
     REG_WRITE(GPIO_OUT_W1TC_REG, DAC_OUTPUT_REG_MASK);
@@ -129,7 +152,7 @@ void generate_wave(uint8_t * data_buffer)
     //  USADO PARA VERIFICAR O TEMPO DE ESCRITA
     time_ptr = &final_time;
     timer_get_counter_value(TIMER_GROUP_0, TIMER_1, (uint64_t *)time_ptr);
-    printf("GPIO %d writes: %lld us\n", (qtd_periods * SAMPLES_PER_PERIOD), (final_time - init_time));
+    printf("GPIO %d writes: %lld us\n", (DAC_SAMPLES_BUF_SIZE), (final_time - init_time));
     stop_test_timer();
 }
 
@@ -176,6 +199,6 @@ void obtain_wave(dac_data_t * recv_buffer)
     //  USADO PARA VERIFICAR O TEMPO DE ESCRITA
     time_ptr = &final_time;
     timer_get_counter_value(TIMER_GROUP_0, TIMER_1, (uint64_t *)time_ptr);
-    printf("GPIO %d writes: %lld us\n", (DAC_SAMPLES_BUF_SIZE), (final_time - init_time));
+    printf("GPIO %d reads: %lld us\n", (DAC_SAMPLES_BUF_SIZE), (final_time - init_time));
     stop_test_timer();
 }
