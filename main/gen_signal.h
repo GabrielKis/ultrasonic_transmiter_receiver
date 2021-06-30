@@ -88,6 +88,5 @@ typedef union
 
 void config_gpio(void);
 void generate_wave(uint8_t * data_buffer, dac_data_t * recv_buffer);
-void obtain_wave(dac_data_t * recv_buffer);
 
 #endif
