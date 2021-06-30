@@ -1,11 +1,16 @@
-ESP-IDF template app
-====================
+# ESP-IDF Sonar de envio customizado de sinal 
+Este repositório contém o projeto de firmware usado para gerar e receber um sinal analógico proveniente de transdutores de ultrassom. A comunicação com o microcontrolador é feita através de um API em python, disponível em:
 
-This is a template application to be used with [Espressif IoT Development Framework](https://github.com/espressif/esp-idf).
+```
+github.com/GabrielKis/ultrasonic_recv_emiter_python_api
+```
 
-Please check [ESP-IDF docs](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for getting started instructions.
+## Utilização
 
-*Code in this repository is in the Public Domain (or CC0 licensed, at your option.)
-Unless required by applicable law or agreed to in writing, this
-software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-CONDITIONS OF ANY KIND, either express or implied.*
+Para gravar o Firmware basta seguir as diretrizes da esp-idf, uma vez que este foi desenvolvido nela. Um guia completo de como preparar o ambiente e gravar o firmware está em:
+
+```
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html
+```
+
+A placa utilizada contém conversores A-D e D-A. O esquemático que corresponde às ligações se encontra no arquivo `esquematico_circuito.jpeg`, neste mesmo repositório.
